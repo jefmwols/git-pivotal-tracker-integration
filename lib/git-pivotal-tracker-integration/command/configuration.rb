@@ -29,6 +29,11 @@ class GitPivotalTrackerIntegration::Command::Configuration
   # configuration so that it can be used across multiple repositories.
   #
   # @return [String] The user's Pivotal Tracker API token
+
+  def initialize
+    check_for_config_file
+    check_for_config_contents
+  end
   def api_token
     api_token = GitPivotalTrackerIntegration::Util::Git.get_config KEY_API_TOKEN, :inherited
     if api_token.empty?
@@ -127,6 +132,75 @@ class GitPivotalTrackerIntegration::Command::Configuration
   end
 
   private
+
+  def check_for_config_file
+    rep_path = GitPivotalTrackerIntegration::Util::Git.repository_root
+    FileUtils.mkdir_p(rep_path + '/.v2gpti') unless Dir.exists?( rep_path + '/.v2gpti/')
+    unless File.exists?(rep_path + '/.v2gpti/config')
+      FileUtils.cp(File.expand_path(File.dirname(__FILE__) + '/../../..') + '/config_template', rep_path + '/.v2gpti/config')
+      @new_config = true
+    end
+  end
+
+  def check_for_config_contents
+    config_filename = "#{GitPivotalTrackerIntegration::Util::Git.repository_root}/.v2gpti/config"
+    pc = ParseConfig.new(config_filename) if File.file?(config_filename)
+
+    config_content = {}
+    pc.params.each do |key,value|
+      if value.is_a?(Hash)
+        value.each do |child_key, child_value|
+          populate_and_save(child_key,child_value,config_content,key)
+        end
+      else
+        populate_and_save(key,value,config_content)
+      end
+    end
+
+    pc.params = config_content
+
+    File.open(config_filename, 'w') do |file|
+      pc.write(file, false)
+    end
+
+    puts "For any modification, please update the details in #{config_filename}" if @new_config
+  end
+
+  def populate_and_save(key,value,hash, parent=nil)
+    mandatory_details = %w(pivotal-tracker-project-id platform-platform-name)
+    if value.empty?
+      mandatory_field = mandatory_details.include?([parent,key].compact.join('-'))
+      val =
+          if mandatory_field || @new_config
+            if key.include?('project-id')
+              ask("Please provide #{parent.nil? ? '' :parent.capitalize} #{key.capitalize} value: ", lambda{|ip| mandatory_field ? Integer(ip) : ip =~ /^$/ ? '' : Integer(ip) }) do |q|
+                q.responses[:invalid_type] = "Please provide valid project-id#{mandatory_field ? '' : '(or blank line to skip)'}"
+              end
+            elsif key.include?('platform-name')
+              say("Please provide #{parent.nil? ? '' :parent.capitalize} #{key.capitalize} value: \n")
+              choose do |menu|
+                menu.prompt = 'Enter any of the above choices: '
+                menu.choices('ios','non-ios')
+              end
+            else
+              ask("Please provide #{parent.nil? ? '' :parent.capitalize} #{key.capitalize} value: ")
+            end
+          end
+      value = val
+    end
+
+    if parent.nil?
+      hash[key.to_s] = value
+    else
+      if hash.has_key?(parent.to_s) && hash[parent.to_s].has_key?(key.to_s)
+        hash[parent.to_s][key.to_sym] = value.to_s
+      else
+        hash[parent.to_s] = Hash.new if !hash.has_key?(parent.to_s)
+        hash[parent.to_s].store(key.to_s,value.to_s)
+      end
+    end
+    hash
+  end
 
   KEY_API_TOKEN = 'pivotal.api-token'.freeze
 
