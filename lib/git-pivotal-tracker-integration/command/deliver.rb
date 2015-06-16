@@ -34,7 +34,7 @@ module GitPivotalTrackerIntegration
         self.check_branch
         story = Util::Story.select_release @project
         $LOG.debug("Release Story:#{story.name}")
-        sort_for_deliver story
+        #sort_for_deliver story
         Util::Story.pretty_print story
 
         current_branch = Util::Git.branch_name
@@ -134,7 +134,8 @@ module GitPivotalTrackerIntegration
         stories = project.stories(filter: "current_state:finished  type:bug,chore,feature -id:#{build_story.id}", limit: 1000)
 
         # capture story details in a file as well as to stdout
-        notes_file = ENV['HOME']+"/#{project.name}-#{build_story.name}"
+        FileUtils.mkdir_p 'release_notes'
+        notes_file = File.join("release_notes", "#{project.name}-#{build_story.name}.txt")
 
         File.open(notes_file, 'w') do |file|
           puts "Included Stories"
