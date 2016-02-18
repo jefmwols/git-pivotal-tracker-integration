@@ -54,7 +54,7 @@ module GitPivotalTrackerIntegration
             abort "FAILED to merge 'develop' in to 'QA'"
           end
         else # we might be on a feature branch. So create a seperate branch for qa.
-          qa_current_branch = current_branch.prepend("qa/")
+          qa_current_branch = "qa-#{current_branch}"
           print "Creating and Checking out new qa branch #{qa_current_branch}"
           Util::Shell.exec "git checkout --quiet -b #{qa_current_branch}"
           Util::Shell.exec "git push -u origin #{qa_current_branch}"
