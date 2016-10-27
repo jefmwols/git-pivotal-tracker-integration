@@ -39,18 +39,25 @@ module GitPivotalTrackerIntegration
 
         current_branch = Util::Git.branch_name
 
-        puts "Merging from orgin develop..."
-        Util::Shell.exec "git pull"
+        if current_branch == 'develop'
+          puts "Merging from orgin develop..."
+          Util::Shell.exec "git pull"
 
-        # checkout QA branch
-        # Merge develop into QA
-        Util::Shell.exec "git checkout QA"
-        Util::Shell.exec "git reset --hard origin/QA"
-        Util::Shell.exec "git pull"
-        if (Util::Shell.exec "git merge -s recursive --strategy-option theirs develop")
-          puts "Merged 'develop' in to 'QA'"
-        else
-          abort "FAILED to merge 'develop' in to 'QA'"
+          # checkout QA branch
+          # Merge develop into QA
+          Util::Shell.exec "git checkout QA"
+          Util::Shell.exec "git reset --hard origin/QA"
+          Util::Shell.exec "git pull"
+          if (Util::Shell.exec "git merge -s recursive --strategy-option theirs develop")
+            puts "Merged 'develop' in to 'QA'"
+          else
+            abort "FAILED to merge 'develop' in to 'QA'"
+          end
+        else # we might be on a feature branch. So create a seperate branch for qa.
+          qa_current_branch = "qa-#{current_branch}"
+          print "Creating and Checking out new qa branch #{qa_current_branch}"
+          Util::Shell.exec "git checkout --quiet -b #{qa_current_branch}"
+          Util::Shell.exec "git push -u origin #{qa_current_branch}"
         end
 
         # retrieve build number from story name
@@ -84,7 +91,7 @@ module GitPivotalTrackerIntegration
         # Create a new build commit, push to QA, checkout develop
         Util::Git.create_commit( "Update build number to #{build_number} for delivery to QA", story)
         puts Util::Shell.exec "git push"
-        puts Util::Shell.exec "git checkout develop"
+        puts Util::Shell.exec "git checkout #{current_branch}"
 
         i_stories = included_stories @project, story
         deliver_stories i_stories, story
@@ -96,13 +103,11 @@ module GitPivotalTrackerIntegration
         suggested_branch  = "develop"
 
         if !suggested_branch.nil? && suggested_branch.length !=0 && current_branch != suggested_branch
-          should_chage_branch = ask("Your currently checked out branch is '#{current_branch}'. You must be on the #{suggested_branch} branch to run this command.\n\n Do you want to checkout '#{suggested_branch}' before starting?(Y/n)")
-          if should_chage_branch != "n"
+          should_change_branch = ask("Your currently checked out branch is '#{current_branch}'. \n\n Do you want to checkout '#{suggested_branch}' before starting?(Y/n)")
+          if should_change_branch != "n"
             print "Checking out branch '#{suggested_branch}'...\n\n"
             Util::Shell.exec "git checkout #{suggested_branch}"
             Util::Shell.exec 'git pull'
-          else
-              abort "You must be on the #{suggested_branch} branch to run this command."
           end
         end
       end
