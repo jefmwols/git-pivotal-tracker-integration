@@ -392,8 +392,8 @@ class Toggl
     return nil if full_res.env[:body] == 'null'
     res = JSON.parse(full_res.env[:body])
     res.is_a?(Array) || res['data'].nil? ? res : res['data']
-  rescue Faraday::ClientError => e
-    raise TogglException, "GET #{resource} Failed"
+  rescue StandardError => e
+    raise TogglException, "GET #{resource} Failed -- #{e.message}"
   end
 
   def post(resource, data)
@@ -406,8 +406,8 @@ class Toggl
     else
       puts(full_res.env[:body])
     end
-  rescue Faraday::ClientError => e
-    raise TogglException, "POST #{resource} / #{data} Failed"
+  rescue StandardError => e
+    raise TogglException, "POST #{resource} / #{data} Failed -- #{e.message}"
   end
 
   def put(resource, data)
@@ -420,8 +420,8 @@ class Toggl
     else
       puts(full_res.env[:body])
     end
-  rescue Faraday::ClientError => e
-    raise TogglException, "PUT #{resource} / #{data} Failed"
+  rescue StandardError => e
+    raise TogglException, "PUT #{resource} / #{data} Failed -- #{e.message}"
   end
 
   def delete(resource)
@@ -429,8 +429,8 @@ class Toggl
     full_res = self.conn.delete(resource)
     # ap full_res.env if @debug
     (200 == full_res.env[:status]) ? "" : puts(full_res.env[:body])
-  rescue Faraday::ClientError => e
-    raise TogglException, "DELETE #{resource} Failed"
+  rescue StandardError => e
+    raise TogglException, "DELETE #{resource} Failed -- #{e.message}"
   end
 
 end
