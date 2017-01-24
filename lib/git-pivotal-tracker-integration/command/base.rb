@@ -67,7 +67,7 @@ module GitPivotalTrackerIntegration
           begin
             @toggl.create_task(parameters(configuration, time_spent))
           rescue TogglException => te
-            puts ""
+            $LOG.log(te.backtrace.join("\n\t"))
           end
         end
 
@@ -75,6 +75,7 @@ module GitPivotalTrackerIntegration
         begin
           @toggl.create_time_entry(parameters(configuration, time_spent))
         rescue TogglException => te
+          $LOG.log(te.backtrace.join("\n\t"))
           puts "Unable to log the time."
         end
       end
