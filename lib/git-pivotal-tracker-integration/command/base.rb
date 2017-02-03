@@ -148,6 +148,7 @@ module GitPivotalTrackerIntegration
       rescue TogglException => te
         $LOG.error("[TOGGL] ----------------  #{te.message}")
         $LOG.error("[TOGGL] ----------------  #{te.message}")
+        params
       end
 
       def seconds_spent(time_spent)
