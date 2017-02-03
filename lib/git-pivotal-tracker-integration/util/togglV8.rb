@@ -22,7 +22,6 @@ class Toggl
     if (password.to_s == 'api_token' && username.to_s == '')
       toggl_api_file = self.toggl_file
       username = IO.read(toggl_api_file)
-
     end
 
     @conn = connection(username, password)
@@ -71,7 +70,10 @@ class Toggl
 
   def me(all=nil)
     # TODO: Reconcile this with get_client_projects
-    res = get "me%s" % [all.nil? ? "" : "?with_related_data=#{all}"]
+    get "me%s" % [all.nil? ? "" : "?with_related_data=#{all}"]
+  rescue TogglException => te
+    puts "Failed to retrieve the Toggl User Id"
+    raise te
   end
 
   def my_clients(user)
