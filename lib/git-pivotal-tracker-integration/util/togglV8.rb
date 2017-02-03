@@ -21,7 +21,7 @@ class Toggl
     self.debug_on(debug) if !debug.nil?
     if (password.to_s == 'api_token' && username.to_s == '')
       toggl_api_file = self.toggl_file
-      username = IO.read(toggl_api_file)
+      username = IO.read(toggl_api_file).strip
     end
 
     @conn = connection(username, password)
