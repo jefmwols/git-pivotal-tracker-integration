@@ -145,7 +145,10 @@ module GitPivotalTrackerIntegration
            params[:tid] = task['id']
          end
         params
+      rescue TogglException => te
+        $LOG.log(te.backtrace.join("\n\t"))
       end
+
       def seconds_spent(time_spent)
         seconds = 0
         time_spent.scan(/(\d+)(\w)/).each do |amount, measure|
