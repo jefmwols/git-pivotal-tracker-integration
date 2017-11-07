@@ -88,7 +88,7 @@ module GitPivotalTrackerIntegration
         raise NotImplementedError
       end
 
-      
+
       def seconds_spent(time_spent)
         seconds = 0
         time_spent.scan(/(\d+)(\w)/).each do |amount, measure|
@@ -168,17 +168,23 @@ module GitPivotalTrackerIntegration
       end
 
       def estimate_story
-        estimate = ask("Please enter the estimate points(0/1/2/3) for this story.") do |q|
-          q.in = ["0", "1", "2", "3"]
-          q.responses[:not_in_range] = "Invalid entry...Please enter the estimate points(0/1/2/3) for this story."
+        point_scale = @project.point_scale
+        point_scale_arr = point_scale.split(',').map(&:to_s)
+
+        estimate = ask("Please enter the estimate points(#{point_scale}) for this story.") do |q|
+          q.in = point_scale_arr
+          q.responses[:not_in_range] = "Invalid entry...Please enter the estimate points(#{point_scale}) for this story."
         end
         estimate.to_i
       end
 
       def estimate_story_optional
-        estimate  = ask("Please enter the estimate points(0/1/2/3) for this feature story.\nIf you don't want to estimate then enter n") do |q|
-                      q.in = ["0", "1", "2", "3", "n"]
-                      q.responses[:not_in_range] = "Invalid entry...Please enter the estimate points(0/1/2/3) for this feature story.\nIf you don't want to estimate then enter n"
+        point_scale = @project.point_scale
+        point_scale_arr = point_scale.split(',').map(&:to_s).push("n")
+
+        estimate  = ask("Please enter the estimate points(#{point_scale}) for this feature story.\nIf you don't want to estimate then enter n") do |q|
+                      q.in = point_scale_arr
+                      q.responses[:not_in_range] = "Invalid entry...Please enter the estimate points(#{point_scale}) for this feature story.\nIf you don't want to estimate then enter n"
                     end
         if estimate == "n"
           estimate = nil
