@@ -43,16 +43,6 @@ module GitPivotalTrackerIntegration
 
         self.commit_new_build
 
-        time_spent = ""
-        while 1
-          time_spent = ask("How much time did you spend on this task? (example: 15m, 2.5h)")
-          if (/\d/.match( time_spent )) && /[mhd]/.match(time_spent)
-            break
-          end
-        end
-
-        finish_toggle(@configuration, time_spent)
-
         Util::Git.merge(@configuration.story(@project), no_complete)
         Util::Git.push Util::Git.branch_name
 

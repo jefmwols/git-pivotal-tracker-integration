@@ -44,14 +44,6 @@ module GitPivotalTrackerIntegration
         api_token
       end
 
-      def toggl_project_id
-        toggle_config = self.pconfig["toggl"]
-        if toggle_config.nil?
-          abort "toggle project id not set"
-        else
-          toggle_config["project-id"]
-        end
-      end
 
       def check_config_project_id
         Util::Git.set_config("pivotal.project-id", self.pconfig["pivotal-tracker"]["project-id"])
