@@ -37,7 +37,6 @@ module GitPivotalTrackerIntegration
         end
 
         @repository_root  = Util::Git.repository_root
-        @toggl            = Toggl.new
         @configuration    = Command::Configuration.new
 
         @configuration.check_for_config_file
@@ -55,28 +54,6 @@ module GitPivotalTrackerIntegration
           project_manager_email = @configuration.pconfig["project"]["project-manager-email"]
           project_name          = @configuration.pconfig["project"]["project-name"]
           abort "This project requires access to the Pivotal Tracker project [#{project_name} - #{current_project_id}]. Please speak with project manager [#{project_manager_name} - #{project_manager_email}] and ask him to add you to the project in Pivotal Tracker."
-        end
-      end
-
-      def finish_toggle(configuration, time_spent)
-        current_story = @configuration.story(@project)
-
-        # If a story gets rejected and the developer works on it, then we need to check if the task is already created or not.
-        params =  parameters(configuration, time_spent)
-        if params[:tid].nil?
-          begin
-            @toggl.create_task(params)
-          rescue StandardError => te
-            $LOG.error(te.backtrace.join("\n\t"))
-          end
-        end
-
-        #If for some reason time entry cannot be done, then catch exception and continue.
-        begin
-          @toggl.create_time_entry(params)
-        rescue StandardError => te
-          $LOG.error(te.backtrace.join("\n\t"))
-          puts "Unable to log the time."
         end
       end
 
@@ -111,46 +88,7 @@ module GitPivotalTrackerIntegration
         raise NotImplementedError
       end
 
-      # Toggl keys
-      # name              : The name of the task (string, required, unique in project)
-      # pid               : project ID for the task (integer, required)
-      # wid               : workspace ID, where the task will be saved (integer, project's workspace id is used when not supplied)
-      # uid               : user ID, to whom the task is assigned to (integer, not required)
-      # estimated_seconds : estimated duration of task in seconds (integer, not required)
-      # active            : whether the task is done or not (boolean, by default true)
-      # at                : timestamp that is sent in the response for PUT, indicates the time task was last updated
-      # -- Additional fields --
-      # done_seconds      : duration (in seconds) of all the time entries registered for this task
-      # uname             : full name of the person to whom the task is assigned to
-      TIMER_TOKENS = {
-          "m" => (60),
-          "h" => (60 * 60),
-          "d" => (60 * 60 * 8) # a work day is 8 hours
-      }
-      def parameters(configuration, time_spent)
-        current_story              = configuration.story(@project)
-        params                     = Hash.new
-        params[:name]              = "#{current_story.id}" + " - " + "#{current_story.name}"
-        params[:estimated_seconds] = estimated_seconds current_story
-        params[:pid]               = configuration.toggl_project_id
-        params[:uid]               = @toggl.me["id"]
-        params[:tags]              = [current_story.story_type]
-        params[:active]            = false
-        params[:description]       = "#{current_story.id}" + " commit:" + "#{(Util::Shell.exec "git rev-parse HEAD").chomp[0..6]}"
-        params[:created_with]      = "v2gpti"
-        params[:duration]          = seconds_spent(time_spent)
-        params[:start]             = (Time.now - params[:duration]).iso8601
-        task                       = @toggl.get_project_task_with_name(configuration.toggl_project_id, "#{current_story.id}")
-         if !task.nil?
-           params[:tid] = task['id']
-         end
-        params
-      rescue TogglException => te
-        $LOG.error("[TOGGL] ----------------  #{te.message}")
-        $LOG.error("[TOGGL] ----------------  #{te.message}")
-        params
-      end
-
+      
       def seconds_spent(time_spent)
         seconds = 0
         time_spent.scan(/(\d+)(\w)/).each do |amount, measure|

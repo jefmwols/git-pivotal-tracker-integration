@@ -40,5 +40,3 @@ module GitPivotalTrackerIntegration
   end
 end
 
-autoload :Toggl,          'git-pivotal-tracker-integration/util/togglV8'
-autoload :TogglException, 'git-pivotal-tracker-integration/util/togglV8'
