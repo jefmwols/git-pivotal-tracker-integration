@@ -133,12 +133,15 @@ module GitPivotalTrackerIntegration
           new_story_title = ask("Please enter the title for this #{new_story_type}.")
         end
 
-        if (new_story_type == "feature" && (new_story_estimate < 0 || new_story_estimate > 3))
-          new_story_estimate = estimate_story
-        end
-
         attrs = {:story_type => new_story_type, :current_state => 'unstarted', :name => new_story_title}
-        attrs[:estimate] = new_story_estimate if new_story_type == "feature"
+
+        if @project.bugs_and_chores_are_estimatable
+          attrs[:estimate] = estimate_story
+        else
+          if (new_story_type == "feature" && (new_story_estimate < 0 || new_story_estimate > 3))
+            attrs[:estimate] = estimate_story
+          end
+        end
 
         @project.create_story(attrs)
 
@@ -207,7 +210,7 @@ module GitPivotalTrackerIntegration
 
         # if it is a feature, get the estimate for the story.
         # if it is not provided in the command line, ask for it
-        if type == "feature"  #set the story points if it is feature story
+        if (type == "feature" or @project.bugs_and_chores_are_estimatable) #set the story points
           args.each do |arg|
             story_points = arg[2] if arg[0] == "-" && arg[1].downcase == "p"
           end
