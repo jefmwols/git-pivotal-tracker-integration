@@ -43,9 +43,11 @@ module GitPivotalTrackerIntegration
 
         abort "There are no available stories." if story.nil?
 
-        if story.story_type == "feature" && story.estimate.nil?
-          story.estimate = estimate_story
-          story.save
+        if story.estimate.nil?
+          if @project.bugs_and_chores_are_estimatable || story.story_type == 'feature'
+            story.estimate = estimate_story
+            story.save
+          end
         end
 
         $LOG.debug("story:#{story.name}")
