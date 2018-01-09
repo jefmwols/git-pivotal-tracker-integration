@@ -134,7 +134,20 @@ module GitPivotalTrackerIntegration
 
       def included_stories(project, build_story)
 
-        stories = project.stories(filter: "current_state:finished  type:bug,chore,feature -id:#{build_story.id}", limit: 1000)
+        stories_finished = project.stories(filter: "current_state:finished  type:bug,chore,feature -id:#{build_story.id}", limit: 1000)
+        story_ids_finished = stories_finished.map { |e| e.id }
+        story_ids_merged = `git log | grep \"\\[Completes\" | egrep -o \"\\d{9}\"`.split("\n").map(&:to_i)
+
+        story_ids_intersection = story_ids_finished & story_ids_merged
+        stories = stories_finished.map { |e| e if story_ids_intersection.include? e.id }.compact
+       
+          #puts "story IDs finished:\n#{story_ids_finished}"
+          #puts "story IDs merged:\n#{story_ids_merged}"
+          #puts "story IDs intersection:\n#{story_ids_intersection}"
+          #puts "story IDs:\n#{stories.map { |e| e.id }}"
+          #puts "stories count:#{stories.count}"
+          #abort "abort"
+
 
         # capture story details in a file as well as to stdout
         FileUtils.mkdir_p 'release_notes'
